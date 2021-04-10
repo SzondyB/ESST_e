@@ -56,9 +56,11 @@ class Maintenance extends HourlyData {
     }
 
 	//izracunati  SUM_HG smao za intermiyent tehnologije da mozemo smanjiti demand za tu proizvodnju za svaku godinu za svaki sat
+    // calculate SUM_HG only for intermittent technology that we can reduce the demand for that production for each year for each hour
     public function getHGi(){
 		if (isset($this->HGi) && empty($this->HGi)) {
             //HG nam treba bez Storage, prvo radimo maintennace pa onda storage
+            // We need HG without Storage, first we do maintenance and then storage
             //$HG = $this->getHG(false);
             $HG = $this->initHG();
             foreach($this->yrs as $year){
@@ -76,7 +78,8 @@ class Maintenance extends HourlyData {
 	}
 	
     //izracunati RHLD Resulting Hourly Load Dispatchable RHD = HD -ImportExport; RHLD = RHD - HGI(Solar, Hydro, Wind)
-   	public function getRHLD(){
+    //calculate RHLD Resulting Hourly Load Dispatchable RHD = HD -ImportExport; RHLD = RHD - HGI(Solar, Hydro, Wind)
+    public function getRHLD(){
 		if (isset($this->RHLD) && empty($this->RHLD)) {
             $RHD = $this->getRHD();
             $HGi = $this->getHGi();
@@ -92,6 +95,7 @@ class Maintenance extends HourlyData {
 	}
 
     //podijeliti RHLD niz na 12 perioda za odrzavanje
+    // divide the RHLD array into 12 maintenance periods
     public function getRHLD_p($mChunk, $nPeriod){
         //if (isset($this->RHLD_p) && empty($this->RHLD_p)) {
             $RHLD = $this->getRHLD();
@@ -106,6 +110,7 @@ class Maintenance extends HourlyData {
     }
 
     //izracunati Maintanence space prostor izmedju instaliranse snage za dipstchable goriva i demanda
+    //calculate the Maintanence space between the installed power for the dipstchable fuel and the demand
     public function getMSPACE_long(){
         if (isset($this->MSPACE_long) && empty($this->MSPACE_long)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkLong, $this->nPeriodLong);
@@ -125,6 +130,7 @@ class Maintenance extends HourlyData {
 		return $this->MSPACE_long;
     }
 
+// calculate the Maintanence space between the installed power for the dispatchable fuel and the demand
     //izracunati Maintanence space prostor izmedju instaliranse snage za dipstchable goriva i demanda
     public function getMSPACE_short(){
         if (isset($this->MSPACE_short) && empty($this->MSPACE_short)) {
@@ -148,6 +154,7 @@ class Maintenance extends HourlyData {
 		return $this->MSPACE_short;
     }
 
+    // calculate Maintanence unit size for all technologies by years
     //izracunati Maintanence unit size za sve thnologije po godinama
     public function getMCLASS(){
         if (isset($this->MCLASS) && empty($this->MCLASS)) {
@@ -192,8 +199,10 @@ class Maintenance extends HourlyData {
     //izracunati i napraviti redosljed odrzavanja 
     public function getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year){
         //najveci broj jedinica po tehnologiji za odrzavanje
+        // maximum number of units per maintenance technology
         if(max($MCLASS['UnitNumber'][$year]) > 0){
             //tehnologija koja ima najvise jedinica za odrzavanje
+            // the technology that has the most maintenance units --> rather biggest
             $technology = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]));
             $tech = $technology[0];
 
@@ -238,7 +247,7 @@ class Maintenance extends HourlyData {
                     $unitSize = $MCLASS['UnitSize'][$year][$tech];
                     $unitNumber = $MCLASS['UnitNumber'][$year][$tech];
                     $this->MCLASS_order[$year][$tech][0] = $unitNumber;
-                    $MCLASS['UnitNumber'][$year][$tech]=0;
+                    $MCLASS['UnitNumber'][$year][$tech] = 0;
                     $MCLASS['UnitSize'][$year][$tech] = 0;
                    // echo "prije rekurzije 1";
                     $this->getMCLASS_order($MCLASS,  $MSPACE_long, $MSPACE_short, $year);
@@ -251,7 +260,7 @@ class Maintenance extends HourlyData {
                     $maxSpace = max($MSPACE_short[$year]);
                     $periodOdrzavanja = array_keys($MSPACE_short[$year], max($MSPACE_short[$year]));
                     $period = $periodOdrzavanja[0];
-                    
+
                     if($unitSize <= $maxSpace && $MCLASS['UnitNumber'][$year][$tech]!=0){
 
                         $MSPACE_short[$year][$period] = $MSPACE_short[$year][$period] - $unitSize;
@@ -362,11 +371,13 @@ class Maintenance extends HourlyData {
 	}
 
     //izracunati i napraviti redosljed odrzavanja po satima preatty print
+    // calculate and make maintenance order by hours preatty print
 	public function getMCLASS_order_h_cp($pMaintenance){
 		if (isset($this->MCLASS_order_h_cp) && empty($this->MCLASS_order_h_cp)) {
             if($pMaintenance){
                 $HM = $this->getMCLASS_order_h();
-            }	
+            }
+            // RHLD must be called after getMCLASS_order_h for getHG to have maintenance values
             //RHLD se mora pozvati poslije getMCLASS_order_h da bi getHG imala vrijednosti odrzavanja
             $RHLD = $this->getRHLD();   //RHD, HD, HGi, HG, NHP, DP
 	    
