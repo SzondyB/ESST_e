@@ -313,6 +313,7 @@ function FORMOR(user, casename){
             let DATA = {};
             DATA['MUS'] = data['MUS'];
             DATA['MDId'] = data['MD'];
+            DATA['FWM'] = data['FWM'];
             DATA['FOR'] = data['FOR']; 
             //console.log(MUS);
             init(DATA);
@@ -327,12 +328,14 @@ function FORMOR(user, casename){
             tmp['Tech'] = name;
             tmp['MUS'] = value;
             tmp['MDId'] = DATA['MDId'][name];
+            //tmp['FWM'] = DATA['FWM'][name];
             tmp['FOR'] = DATA['FOR'][name];
             srcInv.push(tmp);
         });
 
         let duration= [
             {"id":0, "name":"No maintenance"},
+            {"id":1, "name":"1 week"},
             {"id":2, "name":"2 weeks"},
             {"id":4, "name":"4 weeks"}
         ]
@@ -359,6 +362,7 @@ function FORMOR(user, casename){
                 // When the adapter is loaded, each record will have a field called "Country". The "Country" for each record comes from the countriesAdapter where the record's "countryCode" from gridAdapter matches to the "value" from countriesAdapter. 
                 { name: 'Tech', type: 'string'},
                 { name: 'MUS', type: 'number'},
+                { name: 'FWM', type: 'number'},
                 { name: 'FOR', type: 'number'},
                 { name: 'MD', value: 'MDId', values: { source: daFuels.records, value: 'id', name: 'name' } },
                 { name: 'MDId', type: 'number'}
@@ -390,6 +394,7 @@ function FORMOR(user, casename){
               { text: 'Technology', datafield: 'Tech', width: 120, pinned: true, align: 'left', },
               { text: 'Unit size [MW]', datafield: 'MUS', cellsalign: 'right',cellsformat: 'd2', align: 'right', columntype: 'numberinput',},
               { text: 'Maintenance duration [Weeks]', datafield: 'MDId',  displayfield: 'MD', cellsalign: 'right', align: 'right', columntype: 'dropdownlist',  createeditor: ddlEditor},
+              { text: 'First week of maintanance (1-52)', datafield: 'FWM', cellsalign: 'right',cellsformat: 'd2', align: 'right', columntype: 'numberinput',},
               { text: 'Forced outage rate [%]', datafield: 'FOR', cellsalign: 'right',cellsformat: 'd2', align: 'right', columntype: 'numberinput',},
             ] 
         
@@ -404,11 +409,13 @@ function saveFORMOR() {
     FORMORData = {};
     FORMORData['MUS'] = {};
     FORMORData['MD'] = {};
+    FORMORData['FWM'] = {};
     FORMORData['FOR'] = {};
     $.each( data, function( id, obj ) {
         FORMORData['MUS'][obj['Tech']] = obj['MUS'];
         FORMORData['MD'][obj['Tech']] = obj['MDId'];
         FORMORData['FOR'][obj['Tech']] = obj['FOR'];
+        FORMORData['FWM'][obj['Tech']] = obj['FWM'];
     });
 
     var url='app/hSimulation/HourlyAnalysis.php';

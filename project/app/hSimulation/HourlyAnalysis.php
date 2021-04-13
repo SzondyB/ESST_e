@@ -88,6 +88,7 @@ if (isset($_POST['action']) && $_POST['action']=='saveFORMOR'){
 
         $genData['MUS'] = $DATA['MUS'];
         $genData['MD'] = $DATA['MD'];
+        $genData['FWM'] = $DATA['FWM'];
         $genData['FOR'] = $DATA['FOR'];
 
         $fp = fopen(USER_CASE_PATH.$_SESSION['case'].'/hSimulation/genData.json', 'w');
@@ -480,6 +481,11 @@ if(isset($_POST['action']) && $_POST['action'] == 'sync'){
                 }else{
                     $MUS[$tech] = Constant::MTS[$tech];
                 }
+                if(isset($genData['FWM'][$tech])){
+                    $FWM[$tech] = $genData['FWM'][$tech];
+                }else{
+                    $FWM[$tech] = 1;
+                }
                 if(isset($genData['FOR'][$tech])){
                     $FOR[$tech] = $genData['FOR'][$tech];
                 }else{
@@ -492,6 +498,7 @@ if(isset($_POST['action']) && $_POST['action'] == 'sync'){
         }
         $genData['MD'] = $MD;
         $genData['MUS'] = $MUS;
+        $genData['FWM'] = $FWM;
         $genData['FOR'] = $FOR;
         //ETA
         foreach($years as $year){
@@ -646,6 +653,7 @@ function initHData($hPattern){
                 if (!in_array($tech, Constant::HourlyAnalysisTech) && $tech != 'ImportExport'){
                     $genData['MD'][$tech] = Constant::MTD[$tech];
                     $genData['MUS'][$tech] = Constant::MTS[$tech];
+                    $genData['FWM'][$tech] = 1;
                     $genData['FOR'][$tech] = 0;
                 }
             }
