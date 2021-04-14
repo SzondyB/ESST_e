@@ -141,6 +141,7 @@ if (isset($_POST['action']) && $_POST['action']=='saveEta'){
 
         file_put_contents($urlETA, json_encode($ETA));
         
+        
         // $fp = fopen(USER_CASE_PATH.$_SESSION['case'].'/hSimulation/ETA.json', 'w');
         // fwrite($fp, json_encode($ETA, JSON_PRETTY_PRINT));
         // fclose($fp);

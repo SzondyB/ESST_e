@@ -40,7 +40,7 @@ ini_set('memory_limit', -1);
 	public $tech  = array();
     protected $MD  = array();
     protected $MUS = array();
-    protected $FWM = array();
+    //protected $FWM = array();
     protected $FOR = array();
 
     // protected $MaxHDP = array(); //maximum of Hourly Pattern
@@ -176,7 +176,7 @@ ini_set('memory_limit', -1);
             $this->TIC = $this->hData['TIC'];
             $this->TICD_p1 = $this->hData['TDC'];
             $this->CF = $this->hData['CF'];
-            $this->FWM = $this->hData['FWM'];
+            //$this->FWM = $this->hData['FWM'];
             $this->FOR = $this->hData['FOR'];
 
             $this->Unit          = $this->hData['UNIT'];

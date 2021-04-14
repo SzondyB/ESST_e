@@ -328,7 +328,7 @@ function FORMOR(user, casename){
             tmp['Tech'] = name;
             tmp['MUS'] = value;
             tmp['MDId'] = DATA['MDId'][name];
-            //tmp['FWM'] = DATA['FWM'][name];
+            tmp['FWM'] = DATA['FWM'][name];
             tmp['FOR'] = DATA['FOR'][name];
             srcInv.push(tmp);
         });
