@@ -20,6 +20,7 @@ class Maintenance extends HourlyData {
     protected $RHLD_p    = array();
     protected $SCHM    = array();
     protected $SCHM_p    = array();
+    protected $MSPACE_general    = array();
     protected $MSPACE_long    = array();
     protected $MSPACE_short    = array();
     protected $MCLASS    = array();  //maintennce unit size
@@ -32,11 +33,14 @@ class Maintenance extends HourlyData {
     protected $TAIP = array();
     protected $TIC_h = array();
 
-    protected $nPeriodLong; 
-    protected $nPeriodShort; 
+    protected $nPeriodLong;
+    protected $nPeriodShort;
+    protected $nPeriodGeneral;
     protected $hPeriod;  
     protected $mChunkLong;
     protected $mChunkShort;
+    protected $mChunkGeneral;
+
 
     public function __construct($pCase){                
 		
@@ -47,12 +51,16 @@ class Maintenance extends HourlyData {
 
         $this->hPeriod = 8760;
 
-        $this->MDLong = array_values(array_filter(array_map( function($tech, $duration) { if($duration==4) return $tech; }, array_keys($this->MD), array_values($this->MD)))); 
-        $this->MDShort = array_values(array_filter(array_map( function($tech, $duration) { if($duration==2) return $tech; }, array_keys($this->MD), array_values($this->MD))));
+        $this->MDGeneral = array_values(array_filter(array_map( function($tech, $week) { if(!$week==0) return $tech; }, array_keys($this->FWM), array_values($this->FWM))));
+        $this->MDLong = array_values(array_filter(array_map( function($tech, $duration, $week) { if($week==0 & $duration==4) return $tech; }, array_keys($this->MD), array_values($this->MD), array_values($this->FWM))));
+        $this->MDShort = array_values(array_filter(array_map( function($tech, $duration, $week) { if($week==0 & $duration==2) return $tech; }, array_keys($this->MD), array_values($this->MD), array_values($this->FWM))));
         $this->NoMaintenance = array_values(array_filter(array_map( function($tech, $duration) { if($duration==0) return $tech; }, array_keys($this->MD), array_values($this->MD))));
 
         $this->mChunkLong = $this->hPeriod/$this->nPeriodLong;
         $this->mChunkShort = $this->hPeriod/$this->nPeriodShort;
+        $this->mChunkGeneral = 24*7;
+
+        $this->nPeriodGeneral = $this->hPeriod/$this->mChunkGeneral;
 
         //$this->TICD_p1 = $this->getTDC_y();  
     }
@@ -151,6 +159,26 @@ class Maintenance extends HourlyData {
         }
     }
 
+    public function getMSPACE_general(){
+        if (isset($this->MSPACE_general) && empty($this->MSPACE_general)) {
+            $RHLD_p = $this->getRHLD_p($this->mChunkGeneral, $this->nPeriodGeneral);
+            $TICD = $this->TICD_p1;
+            $SCHM = $this->SCHM_sum;
+            foreach($this->yrs as $year){
+                for($i=1; $i<=$this->nPeriodGeneral; $i++){
+                    $SCHM_i = $SCHM[$year][$i];
+                    $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
+                    if($tmp > 0){
+                        $this->MSPACE_general[$year][$i] = floor($tmp);
+                    }
+                    else{
+                        $this->MSPACE_general[$year][$i] = 0;
+                    }
+                }
+            }
+        }
+        return $this->MSPACE_general;
+    }
 
     //izracunati Maintanence space prostor izmedju instaliranse snage za dipstchable goriva i demanda
     //calculate the Maintanence space between the installed power for the dipstchable fuel and the demand
@@ -158,10 +186,11 @@ class Maintenance extends HourlyData {
         if (isset($this->MSPACE_long) && empty($this->MSPACE_long)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkLong, $this->nPeriodLong);
             $TICD = $this->TICD_p1;
-           // $SCHM = $this->SCHM;
+            $SCHM = $this->SCHM_sum;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodLong; $i++){
-                    $tmp = $TICD[$year] - $RHLD_p[$year][$i]; // - $SCHM;
+                    $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
+                    $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
                     if($tmp > 0){
     				    $this->MSPACE_long[$year][$i] = floor($tmp);
                     }
@@ -180,12 +209,14 @@ class Maintenance extends HourlyData {
         if (isset($this->MSPACE_short) && empty($this->MSPACE_short)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkShort, $this->nPeriodShort);
             $TICD = $this->TICD_p1;
+            $SCHM = $this->SCHM_sum;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodShort; $i++){
                     // if ($year == '2020'){
                     //     echo "godina " . $year . " period " . $i . " instalirano = " .  $TICD[$year]  . " demand = " . $RHLD_p[$year][$i]. " SPACE = ". ($TICD[$year] - $RHLD_p[$year][$i]) . "<br>";
                     // }
-                    $tmp = $TICD[$year] - $RHLD_p[$year][$i];
+                    $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
+                    $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
                     if($tmp > 0){
     				    $this->MSPACE_short[$year][$i] = floor($tmp);
                     }
@@ -244,12 +275,12 @@ class Maintenance extends HourlyData {
     public function getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year){
         //najveci broj jedinica po tehnologiji za odrzavanje
         // maximum number of units per maintenance technology
+
         if(max($MCLASS['UnitNumber'][$year]) > 0){
             //tehnologija koja ima najvise jedinica za odrzavanje
             // the technology that has the most maintenance units --> rather biggest
             $technology = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]));
             $tech = $technology[0];
-
             if (in_array($tech , $this->MDLong)) {
                 
                 if(max($MSPACE_long[$year]) >= max($MCLASS['UnitSize'][$year])){
@@ -377,10 +408,24 @@ class Maintenance extends HourlyData {
         $MCLASS = $this->getMCLASS();
         $MSPACE_long = $this->getMSPACE_long();
         $MSPACE_short = $this->getMSPACE_short();
+        $MCLASS = $this->getMCLASS_order_sched($MCLASS);
         foreach($this->yrs as $year){
             $this->getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year);
         }
 
+    }
+
+    public function getMCLASS_order_sched($MCLASS){
+        foreach ($this->yrs as $year) {
+            foreach ($this->tech as $tech) {
+                if (in_array($tech, $this->MDGeneral)) {
+                    $this->MCLASS_order[$year][$tech] = $this->SCHM[$year][$tech];
+                    $MCLASS['UnitSize'][$year][$tech] = 0;
+                    $MCLASS['UnitNumber'][$year][$tech] = 0;
+                }
+            }
+        }
+        return $MCLASS;
     }
 
     //izracunati i napraviti redosljed odrzavanja po satima 
@@ -389,7 +434,6 @@ class Maintenance extends HourlyData {
             // $MCLASS = $this->getMCLASS();
             // $MSPACE_long = $this->getMSPACE_long();
             // $MSPACE_short = $this->getMSPACE_short();
-
             $this->getMCLASS_orderLoop();
 
             foreach($this->yrs as $year){
@@ -397,7 +441,10 @@ class Maintenance extends HourlyData {
                 foreach( $this->MCLASS_order[$year] as $tec=>$v){
                     foreach($v as $period=>$value){
                         if($period != 0){
-                            if (in_array($tec , $this->MDLong)) {
+                            if (in_array($tec , $this->MDGeneral)) {
+                                array_splice($this->MCLASS_order_h[$year][$tec], ($period-1)*$this->mChunkGeneral,   $this->mChunkGeneral,     array_fill(0,$this->mChunkGeneral,$value));
+                            }
+                            else if (in_array($tec , $this->MDLong)) {
                             //if($tec == 'Nuclear' || $tec == 'Coal'){
                                 //echo "year ".$year." tech " . $tec . " period ".$period. ' chumk ' . ($period-1)*$this->mChunkLong . " value " . $value .'<br>';
                                 array_splice($this->MCLASS_order_h[$year][$tec], ($period-1)*$this->mChunkLong,   $this->mChunkLong,     array_fill(0,$this->mChunkLong,$value));
