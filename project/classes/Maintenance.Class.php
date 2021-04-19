@@ -18,6 +18,8 @@ class Maintenance extends HourlyData {
 	protected $HGi = array(); //Hourly Generation by Intermitent Techs by years
     protected $RHLD    = array();
     protected $RHLD_p    = array();
+    protected $SCHM    = array();
+    protected $SCHM_p    = array();
     protected $MSPACE_long    = array();
     protected $MSPACE_short    = array();
     protected $MCLASS    = array();  //maintennce unit size
@@ -94,7 +96,7 @@ class Maintenance extends HourlyData {
 		return $this->RHLD;
 	}
 
-    //podijeliti RHLD niz na 12 perioda za odrzavanje
+	//podijeliti RHLD niz na 12 perioda za odrzavanje
     // divide the RHLD array into 12 maintenance periods
     public function getRHLD_p($mChunk, $nPeriod){
         //if (isset($this->RHLD_p) && empty($this->RHLD_p)) {
@@ -109,15 +111,57 @@ class Maintenance extends HourlyData {
 		return $this->RHLD_p;
     }
 
+    public function initSCHM(){
+        foreach($this->yrs as $year) {
+            foreach ($this->tech[$year] as $tec) {
+                for ($week = 0; $week <= 52; $week++) {
+                    $this->SCHM[$year][$tec][$week] = 0;
+                }
+            }
+        }
+    }
+
+    public function getSCHM(){
+        if (isset($this->SCHM) && empty($this->SCHM)) {
+            $this->initSCHM();
+            $MUS = $this->MUS;
+            $MD = $this->MD;
+            $FWM = $this->FWM;
+            foreach($this->yrs as $year){
+                foreach ($this->tech[$year] as $tec){
+                    if (!$FWM[$tec]==0) {
+                        for ($week = 0; $week < $MD; $i++)
+                            $this->SCHM[$year][$tec][$FWM[$tec]+$week]=$MUS;
+                        $this->RHLD[$year] = array_map( function($val, $j) { return ($val-$j) > 0 ? ($val-$j) : 0; }, $RHD[$year],  $HGi[$year] );
+                    }
+                }
+            }
+        }
+        return $this->RHLD;
+    }
+    public function getSCHM_sum(){
+        $this->getSCHM();
+        $this->SCHM_sum = array();
+        foreach ($this->yrs as $year) {
+            foreach ($this->tech[$year] as $tec) {
+                for ($week = 0; $week <= 52; $week++) {
+                    $this->SCHM_sum[$year][$week] = $this->SCHM_sum[$year][$week] + $this->SCHM[$year][$tec][$week];
+                }
+            }
+        }
+    }
+
+
     //izracunati Maintanence space prostor izmedju instaliranse snage za dipstchable goriva i demanda
     //calculate the Maintanence space between the installed power for the dipstchable fuel and the demand
     public function getMSPACE_long(){
         if (isset($this->MSPACE_long) && empty($this->MSPACE_long)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkLong, $this->nPeriodLong);
             $TICD = $this->TICD_p1;
+           // $SCHM = $this->SCHM;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodLong; $i++){
-                    $tmp = $TICD[$year] - $RHLD_p[$year][$i];
+                    $tmp = $TICD[$year] - $RHLD_p[$year][$i]; // - $SCHM;
                     if($tmp > 0){
     				    $this->MSPACE_long[$year][$i] = floor($tmp);
                     }

@@ -485,7 +485,7 @@ if(isset($_POST['action']) && $_POST['action'] == 'sync'){
                 if(isset($genData['FWM'][$tech])){
                     $FWM[$tech] = $genData['FWM'][$tech];
                 }else{
-                    $FWM[$tech] = 1;
+                    $FWM[$tech] = 0;
                 }
                 if(isset($genData['FOR'][$tech])){
                     $FOR[$tech] = $genData['FOR'][$tech];
@@ -654,7 +654,7 @@ function initHData($hPattern){
                 if (!in_array($tech, Constant::HourlyAnalysisTech) && $tech != 'ImportExport'){
                     $genData['MD'][$tech] = Constant::MTD[$tech];
                     $genData['MUS'][$tech] = Constant::MTS[$tech];
-                    $genData['FWM'][$tech] = 1;
+                    $genData['FWM'][$tech] = 0;
                     $genData['FOR'][$tech] = 0;
                 }
             }
