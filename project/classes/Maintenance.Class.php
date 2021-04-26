@@ -131,7 +131,7 @@ class Maintenance extends HourlyData {
                 }
             }
         }
-        consol.log("Init SCHM ready.");
+        error_log("Init SCHM ready.");
     }
 
     public function getSCHM(){
@@ -140,12 +140,21 @@ class Maintenance extends HourlyData {
             $MUS = $this->MUS;
             $MD = $this->MD;
             $FWM = $this->FWM;
-            consol.log($MUS + '\n ' + $MD + '\n ' + $FWM);
+            error_log("First week of scheduled maintenance:");
+            error_log(implode(",", $FWM));
             foreach($this->yrs as $year){
                 foreach ($this->tech[$year] as $tec){
-                    if (!$FWM[$tec]==0) {
-                        for ($week = 0; $week < $MD; $week++)
-                            $this->SCHM[$year][$tec][$FWM[$tec]+$week]=$MUS;
+                    error_log($FWM[$tec]);
+                    if (!($FWM[$tec]==0)) {
+ //                       error_log($FWM[$year][$tec]);
+                        for ($week = 0; $week < $MD[$tec]; $week++) {
+                            error_log("This week is");
+                            $thisweek = $FWM[$tec] + $week;
+                            error_log($thisweek);
+                            $this->SCHM[$year][$tec][$thisweek]=$MUS[$tec];
+                            error_log($this->SCHM[$year][$tec][$thisweek]);
+                        }
+                        error_log(implode(",", $this->SCHM[$year][$tec]));
                     }
                 }
             }
@@ -160,6 +169,8 @@ class Maintenance extends HourlyData {
                     $this->SCHM_sum[$year][$week] = $this->SCHM_sum[$year][$week] + $this->SCHM[$year][$tec][$week];
                 }
             }
+            error_log('Summed scheduled maintenance by week:');
+            error_log(implode(",", $this->SCHM_sum[$year]));
         }
         return $this->SCHM_sum;
     }
@@ -419,9 +430,7 @@ class Maintenance extends HourlyData {
     public function getMCLASS_orderLoop(){
         error_log("------------------------------New--------------------------");
         $MCLASS = $this->getMCLASS();
-        error_log(implode(",", $MCLASS['UnitNumber'][2040]));
-        error_log(implode(",", $MCLASS['UnitSize'][2040]));
-        //      $SCHM_sum = $this->getSCHM_sum();
+        $SCHM_sum = $this->getSCHM_sum();
         $MSPACE_long = $this->getMSPACE_long();
         $MSPACE_short = $this->getMSPACE_short();
         error_log("getMCLASS_order_sched");
