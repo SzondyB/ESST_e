@@ -40,7 +40,7 @@ ini_set('memory_limit', -1);
 	public $tech  = array();
     protected $MD  = array();
     protected $MUS = array();
-    //protected $FWM = array();
+    protected $FWM = array();
     protected $FOR = array();
 
     // protected $MaxHDP = array(); //maximum of Hourly Pattern

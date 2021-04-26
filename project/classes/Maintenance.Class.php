@@ -19,7 +19,7 @@ class Maintenance extends HourlyData {
     protected $RHLD    = array();
     protected $RHLD_p    = array();
     protected $SCHM    = array();
-    protected $SCHM_p    = array();
+    protected $SCHM_sum    = array();
     protected $MSPACE_general    = array();
     protected $MSPACE_long    = array();
     protected $MSPACE_short    = array();
@@ -33,6 +33,9 @@ class Maintenance extends HourlyData {
     protected $TAIP = array();
     protected $TIC_h = array();
 
+    protected $MDLong;
+    protected $MDShort;
+    protected $MDGeneral;
     protected $nPeriodLong;
     protected $nPeriodShort;
     protected $nPeriodGeneral;
@@ -40,6 +43,7 @@ class Maintenance extends HourlyData {
     protected $mChunkLong;
     protected $mChunkShort;
     protected $mChunkGeneral;
+    protected $NoMaintenance;
 
 
     public function __construct($pCase){                
@@ -127,29 +131,29 @@ class Maintenance extends HourlyData {
                 }
             }
         }
+        consol.log("Init SCHM ready.");
     }
 
     public function getSCHM(){
-        if (isset($this->SCHM) && empty($this->SCHM)) {
+       // if (isset($this->SCHM) && empty($this->SCHM)) {
             $this->initSCHM();
             $MUS = $this->MUS;
             $MD = $this->MD;
             $FWM = $this->FWM;
+            consol.log($MUS + '\n ' + $MD + '\n ' + $FWM);
             foreach($this->yrs as $year){
                 foreach ($this->tech[$year] as $tec){
                     if (!$FWM[$tec]==0) {
-                        for ($week = 0; $week < $MD; $i++)
+                        for ($week = 0; $week < $MD; $week++)
                             $this->SCHM[$year][$tec][$FWM[$tec]+$week]=$MUS;
-                        $this->RHLD[$year] = array_map( function($val, $j) { return ($val-$j) > 0 ? ($val-$j) : 0; }, $RHD[$year],  $HGi[$year] );
                     }
                 }
             }
-        }
-        return $this->RHLD;
+        //}
+        return $this->SCHM;
     }
     public function getSCHM_sum(){
         $this->getSCHM();
-        $this->SCHM_sum = array();
         foreach ($this->yrs as $year) {
             foreach ($this->tech[$year] as $tec) {
                 for ($week = 0; $week <= 52; $week++) {
@@ -157,16 +161,18 @@ class Maintenance extends HourlyData {
                 }
             }
         }
+        return $this->SCHM_sum;
     }
 
     public function getMSPACE_general(){
         if (isset($this->MSPACE_general) && empty($this->MSPACE_general)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkGeneral, $this->nPeriodGeneral);
             $TICD = $this->TICD_p1;
-            $SCHM = $this->SCHM_sum;
+ //           $SCHM = $this->SCHM_sum;
+            $SCHM_i = 0;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodGeneral; $i++){
-                    $SCHM_i = $SCHM[$year][$i];
+//                    $SCHM_i = $SCHM[$year][$i];
                     $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
                     if($tmp > 0){
                         $this->MSPACE_general[$year][$i] = floor($tmp);
@@ -186,10 +192,11 @@ class Maintenance extends HourlyData {
         if (isset($this->MSPACE_long) && empty($this->MSPACE_long)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkLong, $this->nPeriodLong);
             $TICD = $this->TICD_p1;
-            $SCHM = $this->SCHM_sum;
+    //        $SCHM = $this->SCHM_sum;
+            $SCHM_i=0;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodLong; $i++){
-                    $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
+                   // $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
                     $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
                     if($tmp > 0){
     				    $this->MSPACE_long[$year][$i] = floor($tmp);
@@ -209,13 +216,14 @@ class Maintenance extends HourlyData {
         if (isset($this->MSPACE_short) && empty($this->MSPACE_short)) {
             $RHLD_p = $this->getRHLD_p($this->mChunkShort, $this->nPeriodShort);
             $TICD = $this->TICD_p1;
-            $SCHM = $this->SCHM_sum;
+           // $SCHM = $this->SCHM_sum;
+            $SCHM_i = 0;
             foreach($this->yrs as $year){
                 for($i=1; $i<=$this->nPeriodShort; $i++){
                     // if ($year == '2020'){
                     //     echo "godina " . $year . " period " . $i . " instalirano = " .  $TICD[$year]  . " demand = " . $RHLD_p[$year][$i]. " SPACE = ". ($TICD[$year] - $RHLD_p[$year][$i]) . "<br>";
                     // }
-                    $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
+               //     $SCHM_i = max($SCHM[$year][4*$i-3],$SCHM[$year][4*$i-2],$SCHM[$year][4*$i-1],$SCHM[$year][4*$i])[0];
                     $tmp = $TICD[$year] - $RHLD_p[$year][$i] - $SCHM_i;
                     if($tmp > 0){
     				    $this->MSPACE_short[$year][$i] = floor($tmp);
@@ -275,12 +283,15 @@ class Maintenance extends HourlyData {
     public function getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year){
         //najveci broj jedinica po tehnologiji za odrzavanje
         // maximum number of units per maintenance technology
-
+        error_log('getMCLASS_order: ');
+        error_log(implode(",", $MCLASS['UnitNumber'][$year]));
         if(max($MCLASS['UnitNumber'][$year]) > 0){
+            error_log("There are units to maintain.");
             //tehnologija koja ima najvise jedinica za odrzavanje
             // the technology that has the most maintenance units --> rather biggest
-            $technology = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]));
-            $tech = $technology[0];
+            $tech = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]))[0];
+            error_log("Next technology to maintain:");
+            error_log($tech);
             if (in_array($tech , $this->MDLong)) {
                 
                 if(max($MSPACE_long[$year]) >= max($MCLASS['UnitSize'][$year])){
@@ -311,14 +322,14 @@ class Maintenance extends HourlyData {
                             $MCLASS['UnitSize'][$year][$tech] = 0;
                     }
                     
-                    $this->MCLASS_order[$year][$tech][0] = 0;
+                    $this->MCLASS_order[$year][$tech][0] = $MCLASS['UnitNumber'][$year][$tech];
                     $this->getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year);
                 }
                 //nema prostora MSPACE-a
                 //nema prostora za odrzavanje ove jedinice jer je njena velicina veca od maxSpace za odrzavanje, potrebno je ispisati da ta jedinica ne moze biti odrzavana
                 //i pokusati sa tehnologijom koja ima manju jedinicu za odrzavanje...
                 else{
-                    $technology = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]));
+                    $tech = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]))[0];
                     $unitSize = $MCLASS['UnitSize'][$year][$tech];
                     $unitNumber = $MCLASS['UnitNumber'][$year][$tech];
                     $this->MCLASS_order[$year][$tech][0] = $unitNumber;
@@ -360,7 +371,7 @@ class Maintenance extends HourlyData {
                         $MCLASS['UnitSize'][$year][$tech] = 0;
                     }
                     
-                    $this->MCLASS_order[$year][$tech][0] = 0;
+                    $this->MCLASS_order[$year][$tech][0] = $MCLASS['UnitNumber'][$year][$tech];
                      //echo "prije rekurzije 2";
                     $this->getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year);
                 }
@@ -368,7 +379,7 @@ class Maintenance extends HourlyData {
                 //nema prostora za odrzavanje ove jedinice jer je njena velicina veca od maxSpace za odrzavanje, potrebno je ispisati da ta jedinica ne moze biti odrzavana
                 //i pokusati sa tehnologijom koja ima manju jedinicu za odrzavanje...
                 else{
-                    $technology = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]));
+                    $tech = array_keys($MCLASS['UnitSize'][$year], max($MCLASS['UnitSize'][$year]))[0];
                     $unitSize = $MCLASS['UnitSize'][$year][$tech];
                     $unitNumber = $MCLASS['UnitNumber'][$year][$tech];
                     $this->MCLASS_order[$year][$tech][0] = $unitNumber;
@@ -388,7 +399,8 @@ class Maintenance extends HourlyData {
             }
         }
         else{
-            //nema vise jedinica za odrzavanje 
+            error_log("There are NO more units to maintain.");
+            //nema vise jedinica za odrzavanje
             foreach ($this->tech[$year] as $tec){
                 if (in_array($tec, Constant::HourlyAnalysisTech)) {
                         $this->MCLASS_order[$year][$tec][0] = 0;
@@ -405,9 +417,14 @@ class Maintenance extends HourlyData {
 	}
 
     public function getMCLASS_orderLoop(){
+        error_log("------------------------------New--------------------------");
         $MCLASS = $this->getMCLASS();
+        error_log(implode(",", $MCLASS['UnitNumber'][2040]));
+        error_log(implode(",", $MCLASS['UnitSize'][2040]));
+        //      $SCHM_sum = $this->getSCHM_sum();
         $MSPACE_long = $this->getMSPACE_long();
         $MSPACE_short = $this->getMSPACE_short();
+        error_log("getMCLASS_order_sched");
         $MCLASS = $this->getMCLASS_order_sched($MCLASS);
         foreach($this->yrs as $year){
             $this->getMCLASS_order($MCLASS, $MSPACE_long, $MSPACE_short, $year);
@@ -417,14 +434,32 @@ class Maintenance extends HourlyData {
 
     public function getMCLASS_order_sched($MCLASS){
         foreach ($this->yrs as $year) {
-            foreach ($this->tech as $tech) {
-                if (in_array($tech, $this->MDGeneral)) {
-                    $this->MCLASS_order[$year][$tech] = $this->SCHM[$year][$tech];
-                    $MCLASS['UnitSize'][$year][$tech] = 0;
-                    $MCLASS['UnitNumber'][$year][$tech] = 0;
+            foreach ($this->tech[$year] as $tec) {
+                if (in_array($tec, $this->MDGeneral)) {
+                    error_log($tec);
+                    error_log( "scheduled");
+                    error_log($MCLASS['UnitSize'][$year][$tec]);
+                    error_log($MCLASS['UnitNumber'][$year][$tec]);
+ //                   $this->MCLASS_order[$year][$tech] = $this->SCHM[$year][$tech];
+                    $MCLASS['UnitSize'][$year][$tec] = 0;
+                    $MCLASS['UnitNumber'][$year][$tec] = 0;
+                    error_log($MCLASS['UnitSize'][$year][$tec]);
+                    error_log($MCLASS['UnitNumber'][$year][$tec]);
+                    error_log( "---------");
+                }
+                else{
+                    error_log($tec);
+                    error_log("not scheduled");
+                    error_log($MCLASS['UnitSize'][$year][$tec]);
+                    error_log($MCLASS['UnitNumber'][$year][$tec]);
+                    error_log( "---------");
+
                 }
             }
+            error_log(implode(",", ($MCLASS['UnitNumber'][$year])));
+            error_log(implode(",", ($MCLASS['UnitSize'][$year])));
         }
+        $this->MCLASS = $MCLASS;
         return $MCLASS;
     }
 
