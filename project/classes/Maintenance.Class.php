@@ -408,6 +408,14 @@ class Maintenance extends HourlyData {
                 $MCLASS['UnitSize'][$year][$tech] = 0;
                 $this->getMCLASS_order($MCLASS,  $MSPACE_long, $MSPACE_short, $year);
             }
+            else if (in_array($tech , $this->MDGeneral)) {
+                $unitSize = $MCLASS['UnitSize'][$year][$tech];
+                $unitNumber = $MCLASS['UnitNumber'][$year][$tech];
+                $this->MCLASS_order[$year][$tech][0] = $unitNumber;
+                $MCLASS['UnitNumber'][$year][$tech] = 0;
+                $MCLASS['UnitSize'][$year][$tech] = 0;
+                $this->getMCLASS_order($MCLASS,  $MSPACE_long, $MSPACE_short, $year);
+            }
         }
         else{
             error_log("There are NO more units to maintain.");
@@ -449,9 +457,9 @@ class Maintenance extends HourlyData {
                     error_log( "scheduled");
                     error_log($MCLASS['UnitSize'][$year][$tec]);
                     error_log($MCLASS['UnitNumber'][$year][$tec]);
- //                   $this->MCLASS_order[$year][$tech] = $this->SCHM[$year][$tech];
-                    $MCLASS['UnitSize'][$year][$tec] = 0;
-                    $MCLASS['UnitNumber'][$year][$tec] = 0;
+                    $this->MCLASS_order[$year][$tec] = $this->SCHM[$year][$tec];
+//                    $MCLASS['UnitSize'][$year][$tec] = 0;
+                    $MCLASS['UnitNumber'][$year][$tec]--;
                     error_log($MCLASS['UnitSize'][$year][$tec]);
                     error_log($MCLASS['UnitNumber'][$year][$tec]);
                     error_log( "---------");
@@ -468,7 +476,6 @@ class Maintenance extends HourlyData {
             error_log(implode(",", ($MCLASS['UnitNumber'][$year])));
             error_log(implode(",", ($MCLASS['UnitSize'][$year])));
         }
-        $this->MCLASS = $MCLASS;
         return $MCLASS;
     }
 
